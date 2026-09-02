@@ -1,16 +1,37 @@
 #!/bin/bash
-#SBATCH --qos=bbgpu
-#SBATCH --account=turnelln-cluster-challenge
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:a100:2
 #SBATCH --time=00:05:00
-#SBATCH --out=out/nccl-%j.out
+#SBATCH --output=out/%x-%j.out
+#SBATCH --error=out/%x-%j.err
+#SBATCH --job-name=nccl-bench
+
+set -e
+
+if [[ -z "$SLURM_JOB_ID" ]]; then
+    SYSTEM=$1
+
+    source "config/systems/${SYSTEM}.env"
+    mkdir -p out
+
+    sbatch \
+        "${SBATCH_ARGS[@]}" \
+        --export=ALL,SYSTEM="$SYSTEM" \
+        "$0"
+
+    exit
+fi
+
+source "config/systems/${SYSTEM}.env"
 
 module purge
-module load bluebear
-module load bear-apps/2024a/live
-module load NCCL/2.26.2-GCCcore-13.3.0-CUDA-12.6.0
 
+for mod in "${MODULES[@]}"; do
+    module load "$mod"
+done
 
-./build/all_reduce_perf -b 1G -e 1G -g 2
+./external/build/all_reduce_perf \
+    -b 8 \
+    -e 1G \
+    -f 2 \
+    -g 2
