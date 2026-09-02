@@ -8,10 +8,11 @@
 
 set -e
 
+# If we're not on slurm, setup slurm environment
 if [[ -z "$SLURM_JOB_ID" ]]; then
     SYSTEM=$1
 
-    source "config/systems/${SYSTEM}.env"
+    source "config/${SYSTEM}.env"
     mkdir -p out
 
     sbatch \
@@ -30,8 +31,36 @@ for mod in "${MODULES[@]}"; do
     module load "$mod"
 done
 
-./external/build/all_reduce_perf \
-    -b 8 \
-    -e 1G \
-    -f 2 \
-    -g 2
+# Experiment outline:
+#
+# - 5 untimed warm-ups
+# - 1 correctness check
+# - 50 measured runs of 
+# ... Repeat for each benchmark
+#
+# We start with 8 bytes for small message latency, build up to 1GB to check bandwidth for large messages
+
+
+BENCHMARKS=(
+    all_reduce_perf
+    all_gather_perf
+    reduce_scatter_perf
+    broadcast_perf
+)
+
+ARGS=(
+    --minbytes 8 
+    --maxbytes 1G 
+    --stepfactor 2 
+    --ngpus 2
+    --warmup_iters 5
+    --iters 50
+    --check 1
+    --datatype float
+)
+
+
+
+for benchmark in "${BENCHMARKS[@]}"; do
+    "./external/build/$benchmark" "${ARGS[@]}"
+done
