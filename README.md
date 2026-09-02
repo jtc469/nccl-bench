@@ -1,4 +1,4 @@
-**NCCL-Tests Framework for SCC Connect '26**
+****NCCL-Tests Framework for SCC Connect '26****
 
 This is a benchmarking framework for NCCL/RCCL - tests, built for the SCC Connect '26 Hackathon.
 
@@ -19,11 +19,11 @@ https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/collectives.html
 **TODO**
 
 
-2. *The Story*
+**The Story**
 Does latency increase with ngpus? -- Why?
 Do all tests scale the same way? -- Why/Why not?
 
-1. *Multi-node benchmark*
+**Multi-node benchmark**
 - Allocate multiple nodes.
 - Use a test build with MPI support.
 - Launch cooperating benchmark processes on those nodes using the cluster's MPI launcher.
