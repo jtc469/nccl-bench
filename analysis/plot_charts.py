@@ -18,13 +18,18 @@ job_id = args.job_id
 
 benchmarks, partition, ngpus = load_csvs(system, job_id)
 
+FILE_HEAD = f"out/plots/{system}-{job_id}"
+
 for b in benchmarks:
 
     name = b.replace("perf", "")
 
-    Path(f"out/plots/{system}-{job_id}").mkdir(parents=True, exist_ok=True)
+    Path(FILE_HEAD).mkdir(parents=True, exist_ok=True)
 
     df = benchmarks[b]
+
+    df = df[
+    (df["inplace"] == 0) & (df["size"] > 0)].sort_values("size")
 
     ax = df.plot(
         x="size",
@@ -56,5 +61,7 @@ for b in benchmarks:
     },
     )
 
-    plt.savefig(f"out/plots/{system}-{job_id}/{system}-{name}.png", dpi=200)
+    plt.savefig(f"{FILE_HEAD}/{system}-{name}.png", dpi=200)
     plt.close()
+
+print(f"{len(benchmarks)} plots saved to {FILE_HEAD}")
