@@ -8,7 +8,7 @@
 
 set -e
 
-# If we're not on slurm, setup slurm environment
+# Set up slurm environment
 if [[ -z "$SLURM_JOB_ID" ]]; then
     SYSTEM=$1
 
@@ -23,7 +23,7 @@ if [[ -z "$SLURM_JOB_ID" ]]; then
     exit
 fi
 
-source "config/systems/${SYSTEM}.env"
+source "config/${SYSTEM}.env"
 
 module purge
 
@@ -38,8 +38,6 @@ done
 # - 50 measured runs of 
 # ... Repeat for each benchmark
 #
-# We start with 8 bytes for small message latency, build up to 1GB to check bandwidth for large messages
-
 
 BENCHMARKS=(
     all_reduce_perf
@@ -49,10 +47,14 @@ BENCHMARKS=(
 )
 
 ARGS=(
+    # We start with 8 bytes for small message latency,
+    # build up to 1GB to check bandwidth for large messages
+    # All tests are across 2 GPUs
     --minbytes 8 
     --maxbytes 1G 
     --stepfactor 2 
     --ngpus 2
+
     --warmup_iters 5
     --iters 50
     --check 1
@@ -61,6 +63,9 @@ ARGS=(
 
 
 
-for benchmark in "${BENCHMARKS[@]}"; do
-    "./external/build/$benchmark" "${ARGS[@]}"
+for b in "${BENCHMARKS[@]}"; do
+    "./external/build/$b" \
+        "${ARGS[@]}" \
+        --output_format csv \
+        --output_file "out/raw/${SYSTEM}-${b}-${SLURM_JOB_ID}.csv"
 done
