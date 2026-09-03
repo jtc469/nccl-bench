@@ -2,7 +2,7 @@
 
 This is a benchmarking framework for NCCL, built for the SCC Connect '26 Hackathon.
 
-It is built to benchmark cross-gpu communication on NVIDEA and AMD systems.
+It is built to benchmark cross-gpu communication on NVIDEA (NCCL-Test) and AMD (RCCL-Test) systems.
 
 Testing on:
 - AMD Developer Cloud
