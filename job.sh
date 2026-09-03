@@ -2,8 +2,6 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --time=00:05:00
-#SBATCH --output=out/%x-%j.out
-#SBATCH --error=out/%x-%j.err
 #SBATCH --job-name=nccl-bench
 
 set -e
