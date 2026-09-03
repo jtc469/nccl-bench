@@ -15,6 +15,11 @@ Testing on:
 - run `cd external && make`
 - ...
 
+#### Running on slurm
+- ./job.sh [SYSTEM] 
+- python3 analysis/plot_charts.py [SYSTEM] [JOB_ID]
+
+
 ## NCCL Docs (NVIDEA)
 https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/collectives.html
 
