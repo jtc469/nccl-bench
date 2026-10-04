@@ -40,6 +40,6 @@ Investigate differences and decide on a way to include them in the analysis
 - Use a test build with MPI support.
 - Launch cooperating benchmark processes on those nodes using the cluster's MPI launcher.
 
-Just changing --nodes=1 to --nodes=2 will launch two copies
+Just changing --nodes=1 to --nodes=2 will just launch two copies, one on each node
 
 Will be interesting to compare communication within one node vs communication between nodes across the network
