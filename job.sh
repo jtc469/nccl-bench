@@ -24,11 +24,14 @@ fi
 
 source "config/${SYSTEM}.env"
 
-module purge
+# Only load modules on systems that have them
+if command -v module >/dev/null 2>&1; then
+    module purge
 
-for mod in "${MODULES[@]}"; do
-    module load "$mod"
-done
+    for mod in "${MODULES[@]}"; do
+        module load "$mod"
+    done
+fi
 
 # Log metadata (GPU hardware, partitions, ngpus, etc)
 NGPUS=${SLURM_GPUS_ON_NODE}
@@ -81,6 +84,6 @@ ARGS=(
 for b in "${BENCHMARKS[@]}"; do
     "./external/build/$b" \
         "${ARGS[@]}" \
-        --output_format csv \
+        "${OUTPUT_ARGS[@]}" \
         --output_file "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.csv"
 done
