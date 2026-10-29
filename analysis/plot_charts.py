@@ -22,7 +22,7 @@ FILE_HEAD = f"out/plots/{system}-{job_id}"
 
 for b in benchmarks:
 
-    name = b.replace("perf", "")
+    name = b.replace("_perf", "")
 
     Path(FILE_HEAD).mkdir(parents=True, exist_ok=True)
 
@@ -35,13 +35,28 @@ for b in benchmarks:
         x="size",
         y="time",
         marker="o",
+        color="tab:blue",
         legend=False
     )
 
+    ax2 = ax.twinx()
+    df.plot(
+        x="size",
+        y="busbw",
+        marker="s",
+        color="tab:orange",
+        legend=False,
+        ax=ax2
+    )
+
     ax.set_xscale("log", base=2)
+    ax.set_yscale("log", base=2)
     ax.set_xlabel("Message size (bytes)")
-    ax.set_ylabel("Time (µs)")
-    ax.set_title(f"{system} {name} latency")
+    ax.set_ylabel("Time (µs)", color="tab:blue")
+    ax2.set_ylabel("Bus bandwidth (GB/s)", color="tab:orange")
+    ax.tick_params(axis="y", labelcolor="tab:blue")
+    ax2.tick_params(axis="y", labelcolor="tab:orange")
+    ax.set_title(f"{system} {name} latency and bus bandwidth")
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
