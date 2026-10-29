@@ -34,7 +34,13 @@ if command -v module >/dev/null 2>&1; then
 fi
 
 # Log metadata (GPU hardware, partitions, ngpus, etc)
-NGPUS=${SLURM_GPUS_ON_NODE}
+# Some systems don't set SLURM_GPUS_ON_NODE, so fall back to the config value
+NGPUS=${SLURM_GPUS_ON_NODE:-$NGPUS_FALLBACK}
+
+if [[ -z "$NGPUS" ]]; then
+    echo "SLURM_GPUS_ON_NODE is unset; set NGPUS_FALLBACK in config/${SYSTEM}.env"
+    exit 1
+fi
 
 RUN_DIR="out/raw/${SYSTEM}-${SLURM_JOB_ID}"
 mkdir -p "$RUN_DIR"
