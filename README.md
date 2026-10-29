@@ -22,6 +22,13 @@ Testing on:
 - ./job.sh [SYSTEM] 
 - python3 analysis/plot_charts.py [SYSTEM] [JOB_ID]
 
+Each run writes to `out/raw/[SYSTEM]-[JOB_ID]/`:
+- `[SYSTEM]-[BENCHMARK]-[JOB_ID].csv` - results, one row per (size, in-place)
+- `[SYSTEM]-[BENCHMARK]-[JOB_ID].log` - complete, unedited benchmark output
+- `metadata-[JOB_ID].csv` - system, node, partition, ngpus
+- `gpus-*`, `topo-*`, `nvlink-*` - GPU model and interconnect topology
+- `build-info.txt` - which build produced the results
+
 
 ## NCCL Docs (NVIDEA)
 https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/collectives.html
