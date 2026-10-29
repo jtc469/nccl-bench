@@ -4,7 +4,7 @@
 #SBATCH --time=00:05:00
 #SBATCH --job-name=nccl-bench
 
-set -e
+set -eo pipefail
 
 
 # Set up slurm environment
@@ -68,6 +68,9 @@ elif command -v rocm-smi >/dev/null 2>&1; then
         > "${RUN_DIR}/topo-${SLURM_JOB_ID}.txt" || echo "rocm-smi topo failed"
 fi
 
+# Keep a record of which build produced these results
+cp external/build/build-info.txt "$RUN_DIR/" || echo "no build-info.txt, was build.sh run?"
+
 
 # Experiment outline:
 #
@@ -103,9 +106,12 @@ ARGS=(
 
 
 
+# Complete, unedited output of each benchmark is kept alongside its csv
+# (pipefail above makes a failing benchmark still fail the job through tee)
 for b in "${BENCHMARKS[@]}"; do
     "./external/build/$b" \
         "${ARGS[@]}" \
         "${OUTPUT_ARGS[@]}" \
-        --output_file "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.csv"
+        --output_file "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.csv" \
+        2>&1 | tee "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.log"
 done
