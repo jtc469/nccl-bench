@@ -11,9 +11,12 @@ Testing on:
 
 ### Instructions for use
 - Clone the repo
-- Clone nccl-tests (or rccl-tests for rocm systems) into external/
-- run `cd external && make`
-- ...
+- ./build.sh [SYSTEM]
+    - Clones the benchmark source set in `config/[SYSTEM].env` into external/ and builds it
+    - NVIDIA systems use the [jtc469/nccl-tests](https://github.com/jtc469/nccl-tests/tree/csv-output) `csv-output` branch, as stock nccl-tests can't write csv
+    - AMD systems use [ROCm/rccl-tests](https://github.com/ROCm/rccl-tests)
+    - Extra args are passed to make, e.g. `./build.sh scc NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"`
+    - Build details (repo, commit, compiler) are saved to `external/build/build-info.txt`
 
 #### Running on slurm
 - ./job.sh [SYSTEM] 

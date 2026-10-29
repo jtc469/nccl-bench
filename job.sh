@@ -46,6 +46,22 @@ printf '%s\n' \
     "$SYSTEM,$SLURM_JOB_ID,$SLURMD_NODENAME,$SLURM_JOB_PARTITION,$NGPUS" \
     > "$METADATA_FILE"
 
+# Log GPU model & interconnect topology (link count sets the peak busbw)
+# Logging failures shouldn't kill the benchmark run, hence || echo
+if command -v nvidia-smi >/dev/null 2>&1; then
+    nvidia-smi --query-gpu=name,driver_version --format=csv \
+        > "${RUN_DIR}/gpus-${SLURM_JOB_ID}.csv" || echo "nvidia-smi query failed"
+    nvidia-smi topo -m \
+        > "${RUN_DIR}/topo-${SLURM_JOB_ID}.txt" || echo "nvidia-smi topo failed"
+    nvidia-smi nvlink --status \
+        > "${RUN_DIR}/nvlink-${SLURM_JOB_ID}.txt" || echo "nvidia-smi nvlink failed"
+elif command -v rocm-smi >/dev/null 2>&1; then
+    rocm-smi --showproductname \
+        > "${RUN_DIR}/gpus-${SLURM_JOB_ID}.txt" || echo "rocm-smi productname failed"
+    rocm-smi --showtopo \
+        > "${RUN_DIR}/topo-${SLURM_JOB_ID}.txt" || echo "rocm-smi topo failed"
+fi
+
 
 # Experiment outline:
 #
