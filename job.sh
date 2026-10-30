@@ -1,23 +1,42 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --time=00:05:00
+#SBATCH --time=00:30:00
 #SBATCH --job-name=nccl-bench
 
+# Usage: ./job.sh [SYSTEM] [LABEL] [extra benchmark args...]
+#
+#   LABEL groups runs of the same config for analysis (default: baseline).
+#   Extra args are passed to every benchmark and override the defaults below.
+#   NCCL_* env vars and LAUNCHER (a command prefix) are passed into the job.
+#
+#   e.g. ./job.sh scc
+#        NCCL_PROTO=LL ./job.sh scc lat-ll --maxbytes 64K --iters 1000
+#        LAUNCHER="numactl --cpunodebind=0 --membind=0" ./job.sh scc numa
+
 set -eo pipefail
+
+SYSTEM=$1
+LABEL=${2:-baseline}
+shift $(( $# < 2 ? $# : 2 ))
+EXTRA_ARGS=("$@")
+
+if [[ "$LABEL" == -* ]]; then
+    echo "Give a label before extra args, e.g. $0 $SYSTEM my-label $LABEL ..."
+    exit 1
+fi
 
 
 # Set up slurm environment
 if [[ -z "$SLURM_JOB_ID" ]]; then
-    SYSTEM=$1
-
     source "config/${SYSTEM}.env"
     mkdir -p out
 
     sbatch \
         "${SBATCH_ARGS[@]}" \
-        --export=ALL,SYSTEM="$SYSTEM" \
-        "$0"
+        --job-name="nccl-${LABEL}" \
+        --export=ALL \
+        "$0" "$SYSTEM" "$LABEL" "${EXTRA_ARGS[@]}"
 
     exit
 fi
@@ -48,15 +67,18 @@ mkdir -p "$RUN_DIR"
 METADATA_FILE="${RUN_DIR}/metadata-${SLURM_JOB_ID}.csv"
 
 printf '%s\n' \
-    "system,job_id,node,partition,ngpus" \
-    "$SYSTEM,$SLURM_JOB_ID,$SLURMD_NODENAME,$SLURM_JOB_PARTITION,$NGPUS" \
+    "system,job_id,label,node,partition,ngpus" \
+    "$SYSTEM,$SLURM_JOB_ID,$LABEL,$SLURMD_NODENAME,$SLURM_JOB_PARTITION,$NGPUS" \
     > "$METADATA_FILE"
 
-# Log GPU model & interconnect topology (link count sets the peak busbw)
+# Log GPU model, clocks & interconnect topology (link count sets the peak busbw)
 # Logging failures shouldn't kill the benchmark run, hence || echo
 if command -v nvidia-smi >/dev/null 2>&1; then
-    nvidia-smi --query-gpu=name,driver_version --format=csv \
+    nvidia-smi --query-gpu=name,driver_version,persistence_mode,clocks.sm,clocks.max.sm,clocks.mem \
+        --format=csv \
         > "${RUN_DIR}/gpus-${SLURM_JOB_ID}.csv" || echo "nvidia-smi query failed"
+    nvidia-smi -q -d CLOCK,PERFORMANCE \
+        > "${RUN_DIR}/clocks-${SLURM_JOB_ID}.txt" || echo "nvidia-smi clocks failed"
     nvidia-smi topo -m \
         > "${RUN_DIR}/topo-${SLURM_JOB_ID}.txt" || echo "nvidia-smi topo failed"
     nvidia-smi nvlink --status \
@@ -76,7 +98,7 @@ cp external/build/build-info.txt "$RUN_DIR/" || echo "no build-info.txt, was bui
 #
 # - 5 untimed warm-ups
 # - 1 correctness check
-# - 50 measured runs of 
+# - 50 measured runs of
 # ... Repeat for each benchmark
 #
 
@@ -90,11 +112,11 @@ BENCHMARKS=(
 ARGS=(
     # We start with 8 bytes for small message latency,
     # build up to 1GB to check bandwidth for large messages
-    
+
     # Always check ngpus < gres:gpus in system config
-    --minbytes 8 
-    --maxbytes 1G 
-    --stepfactor 2 
+    --minbytes 8
+    --maxbytes 1G
+    --stepfactor 2
     --ngpus "$NGPUS"
 
     --warmup_iters 5
@@ -103,15 +125,27 @@ ARGS=(
     --datatype float
 )
 
+read -ra LAUNCH <<< "$LAUNCHER"
 
+# Record exactly what this config was, for the tuning writeup
+{
+    echo "label: $LABEL"
+    echo "launcher: ${LAUNCH[*]}"
+    echo "args: ${ARGS[*]} ${OUTPUT_ARGS[*]}"
+    echo "extra args: ${EXTRA_ARGS[*]}"
+    echo "NCCL env:"
+    env | grep '^NCCL_' | sort || echo "(none set)"
+} > "${RUN_DIR}/run-config-${SLURM_JOB_ID}.txt"
 
 
 # Complete, unedited output of each benchmark is kept alongside its csv
 # (pipefail above makes a failing benchmark still fail the job through tee)
+# Extra args come last so they override the defaults in ARGS
 for b in "${BENCHMARKS[@]}"; do
-    "./external/build/$b" \
+    "${LAUNCH[@]}" "./external/build/$b" \
         "${ARGS[@]}" \
         "${OUTPUT_ARGS[@]}" \
+        "${EXTRA_ARGS[@]}" \
         --output_file "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.csv" \
         2>&1 | tee "$RUN_DIR/${SYSTEM}-${b}-${SLURM_JOB_ID}.log"
 done
