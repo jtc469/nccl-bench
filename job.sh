@@ -127,7 +127,7 @@ ARGS=(
 
 read -ra LAUNCH <<< "$LAUNCHER"
 
-# Record exactly what this config was, for the tuning writeup
+# Record exactly what this config was
 {
     echo "label: $LABEL"
     echo "launcher: ${LAUNCH[*]}"
@@ -138,7 +138,7 @@ read -ra LAUNCH <<< "$LAUNCHER"
 } > "${RUN_DIR}/run-config-${SLURM_JOB_ID}.txt"
 
 
-# Complete, unedited output of each benchmark is kept alongside its csv
+# Complete output of each benchmark is kept alongside its csv
 # (pipefail above makes a failing benchmark still fail the job through tee)
 # Extra args come last so they override the defaults in ARGS
 for b in "${BENCHMARKS[@]}"; do
