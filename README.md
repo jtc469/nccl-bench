@@ -1,6 +1,6 @@
-## NCCL-Tests Framework for SCC Connect '26
+## NCCL-Tests Benchmarking Suite for SCC Connect '26
 
-This is a benchmarking framework for NCCL, built for the SCC Connect '26 Hackathon.
+This is a benchmarking suite for NCCL, built for the SCC Connect '26 Hackathon.
 
 It is built to benchmark cross-gpu communication on NVIDEA (NCCL-Test) and AMD (RCCL-Test) systems.
 
